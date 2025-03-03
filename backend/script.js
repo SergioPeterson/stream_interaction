@@ -1,4 +1,7 @@
-
+const oAuth = "oauth:i9mb9w8mydpu0zpv0q4as9qkv5a82x";
+const CLIENT_ID = "f48pwsj7gitmrcsx0ffl83msm8w6sm";  
+const ACCESS_TOKEN_SUB = "28cncoxqye2ajwm1jilg14b11iht32";
+const BROADCASTER_ID = "1268898855"; 
 
 const user = "bearthecoder";
 const channel = "watchocracy";
