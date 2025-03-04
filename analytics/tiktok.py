@@ -1,4 +1,6 @@
 import asyncio
+import datetime
+import time
 from TikTokLive import TikTokLiveClient
 from TikTokLive.events import (
     ConnectEvent, FollowEvent, GiftEvent, RoomUserSeqEvent, 
@@ -7,24 +9,73 @@ from TikTokLive.events import (
 from Analytics import Analytics
 import signal
 import sys
-import time
 from rich.console import Console
 from rich.table import Table
 from rich.live import Live
 
-# Gift values mapping for point calculations
 gift_values = {
-    "rose": 1, "panda": 5, "perfume": 20, "i love you": 49,
-    "confetti": 100, "sunglasses": 199, "money rain": 500,
-    "disco ball": 1000, "mermaid": 2988, "airplane": 6000,
-    "planet": 15000, "diamond flight": 18000, "lion": 29999,
-    "tiktok universe": 44999
+    "Dalgona Candy": 1, "Brat": 1, "Ice cube": 1, "2025": 1, "Heart Me": 1,
+    "Fest burst": 1, "Candy Cane": 1, "Flame Heart": 1, "Music play": 1, "Basketball": 1,
+    "GG": 1, "Lightning Bolt": 1, "Ice cream Cone": 1, "Rose": 1, "TikTok": 1,
+    "It’s corn": 1, "Heart Puff": 1, "Slay": 1, "GOAT": 1, "Chili": 1,
+    "Paddington in Peru": 1, "Take More Photos": 1, "Team Bracelet": 2, "W": 5,
+    "Fluffy penguin": 5, "Tofu the cat": 5, "Ladybug": 5, "Espresso": 5, "Finger heart": 5,
+    "American football": 5, "Cheer You Up": 9, "Gold boxing glove": 10, "Festive potato": 10,
+    "Little ghost": 10, "Christmas wreath": 10, "Friendship Necklace": 10, "Rosa": 10,
+    "Dolphin": 10, "Tiny Dino": 10, "Hi Bear": 10, "Perfume": 20, "Let ‘Em Cook": 20,
+    "Scented candle": 20, "S Flowers": 20, "Doughnut": 30, "Sign language love": 49,
+    "Butterfly": 88, "Fist bump": 90, "Sending strength": 90, "Family": 90, "Chart topper": 90,
+    "Cap": 99, "Level-up Sparks": 99, "Bubble Gum": 99, "Paper crane": 99, "Fest crown": 99,
+    "Love Painting": 99, "Little crown": 99, "Hat and Mustache": 99, "Flowers": 100,
+    "Game Controller": 100, "Hand Heart": 100, "Super GG": 100, "Confetti": 100,
+    "Marvelous Confetti": 100, "Stroke hair": 100, "Massage for You": 199, "Potato in Paris": 199,
+    "Hanging Lights": 199, "Wooly Hat": 199, "Headphone": 199, "Reindeer": 199, "Festive bear": 199,
+    "Cheering Crab": 199, "Hearts": 199, "Sunglasses": 199, "Night star": 199, "Twinkling Star": 199,
+    "Eye see you": 199, "Santa’s mailbox": 199, "Dancing hands": 199, "Mistletoe": 199,
+    "Message for you": 199, "Stinging bee": 199, "Coffee magic": 199, "Sending positivity": 199,
+    "Love you": 199, "Garland Headpiece": 199, "Bunny Ears": 200, "Gold Medal": 200,
+    "Balloons": 200, "2025 Glasses": 225, "Pinch Face": 249, "Starlight Compass": 299,
+    "Butterfly for You": 299, "Pawfect": 299, "Paddington Hat": 299, "Elephant trunk": 299,
+    "TikTok Crown": 299, "Elf’s hat": 299, "Fruit friends": 299, "Play for You": 299,
+    "Rock Star": 299, "Superpower": 299, "Boxing Gloves": 299, "Corgi": 299, "Dancing flower": 299,
+    "Naughty Chicken": 299, "Falling For You": 299, "Full moon": 299, "Lover’s Glasses": 299,
+    "Rosie the Rose Bean": 399, "Jollie the Joy Bean": 399, "Good Afternoon": 399, "Good Night": 399,
+    "Tom’s Hug": 399, "Relaxed goose": 399, "Rocky the Rock Bean": 399, "Sage the Smart Bean": 399,
+    "Pumpkin head": 399, "Forever Rosa": 399, "Gaming headset": 399, "Good Morning": 399,
+    "Good Evening": 399, "You Are Loved": 399, "Let butterfly dances": 399, "Beating heart": 449,
+    "Coral": 499, "Panda Hug": 499, "Im Just a Hamster": 499, "Hands Up": 499, "Dragon Crown": 500,
+    "XXXL Flowers": 500, "You’re amazing": 500, "Money gun": 500, "Gem gun": 500, "Manifesting": 500,
+    "Lion’s mane": 500, "DJ glasses": 500, "Star map polaris": 500, "VR Goggles": 500,
+    "Diamond Microphone": 500, "Happy Weekend": 599, "Swan": 699, "Train": 899, "It’s a Match": 899,
+    "Superstar": 900, "Travel with You": 999, "Lucky the Airdrop Box": 999, "Trending Figure": 999,
+    "Enchanted Guitar": 999, "Magic Cat": 1000, "Drums": 1000, "Galaxy": 1000, "Blooming ribbons": 1000,
+    "Glowing jellyfish": 1000, "Watermelon Love": 1000, "Dinosaur": 1000, "Gerry the giraffe": 1000,
+    "Shiny air balloon": 1000, "Fireworks": 1088, "Diamond tree": 1088, "Umbrella of Love": 1200,
+    "Epic GG": 1200, "Fountain": 1200, "Spooky cat": 1200, "Paddington Snow": 1200,
+    "Moonlight flower": 1400, "Streamer’s Setup": 1400, "Level Ship": 1500, "Future Encounter": 1500,
+    "Love explosion": 1500, "Under control": 1500, "Greeting card": 1500, "Card to You": 1500,
+    "Chasing the dream": 1500, "Shooting Stars": 1580, "Here We Go": 1799, "Mystery firework": 1999,
+    "Cooper flies home": 1999, "Spooktacular": 1999, "Christmas carousel": 2000, "Baby dragon": 2000,
+    "Red telephone box": 2100, "Whale Diving": 2150, "Animal band": 2500, "Cupid": 2888,
+    "Motorcycle": 2988, "Fest Celebration": 2999, "Rhythmic bear": 2999, "Magic Blast": 2999,
+    "Dancing bears": 3000, "Meteor Shower": 3000, "Car drifting": 3000, "Gaming keyboard": 4000,
+    "Your Concert": 4500, "Leon the kitten": 4888, "Signature Jet": 4888, "Private jet": 4888,
+    "Fiery Dragon": 4888, "Silver sports car": 5000, "Ellie the Elephant": 5000, "Wanda the Witch": 5000,
+    "Flying jets": 5000, "Diamond Gun": 5000, "DJ Alien": 5000, "Wolf": 5500, "Santa’s express": 5999,
+    "Hands up high": 6000, "Future city": 6000, "Work Hard Play Harder": 6000, "Lili the Leopard": 6599,
+    "Happy Party": 6999, "Sports car": 7000, "Love from Dubai": 7499, "Leon and Lili": 9699,
+    "Santa’s here!": 9999, "Interstellar": 10000, "Sunset Speedway": 10000, "Octopus": 10000,
+    "Luxury Yacht": 10000, "Bob’s Town": 15000, "Party On&On": 15000, "Rosa Nebula": 15000
 }
 
+# Prompt user for TikTok username at runtime
 user = input("Enter the TikTok username (without @): ").strip()
 client = TikTokLiveClient(unique_id="@" + user)
+
 analytics = Analytics(platform="TikTok")
 session_id = analytics.start_stream_session(user)
+
+# Tracking statistics
 start_time = time.time()
 viewer_last_logged = 0
 reconnect_attempts = 0
@@ -32,8 +83,18 @@ max_views = 0
 new_followers = 0
 total_gift_points = 0
 current_views = 0
+
 console = Console()
-lock = asyncio.Lock() 
+lock = asyncio.Lock()  # Ensure thread-safe updates
+
+def get_runtime():
+    """Returns the stream runtime in hh:mm:ss format."""
+    elapsed_time = int(time.time() - start_time)
+    return str(datetime.timedelta(seconds=elapsed_time))
+
+def get_formatted_time():
+    """Returns current time in MM/DD/YYYY HH:MM format."""
+    return datetime.datetime.now().strftime("%m/%d/%Y %H:%M")
 
 def generate_table():
     """Generate a rich table with live stream statistics."""
@@ -43,6 +104,7 @@ def generate_table():
     table.add_column("Value", justify="center", style="bold yellow")
     
     table.add_row("🎥 Streamer", user)
+    table.add_row("⏳ Runtime", get_runtime())  # New runtime row
     table.add_row("👀 Current Views", str(current_views))
     table.add_row("🔥 Max Views", str(max_views))
     table.add_row("📌 New Followers", str(new_followers))
@@ -91,7 +153,8 @@ async def on_disconnect(event):
 async def on_live_end(event):
     """Handles stream ending by gracefully shutting down."""
     print("TikTok Live has ended. Saving data and exiting.")
-    handle_exit(None, None)  # Call the fixed exit function
+    handle_exit(None, None)
+
 @client.on(FollowEvent)
 async def on_follow(event):
     """Count total followers gained in session"""
@@ -124,7 +187,7 @@ async def on_gift(event):
         print(f"⚠️ Error: 'gift' object missing in event: {event.__dict__}")
         return 
 
-    analytics.aggregate_gift(session_id, gift_name, gift_count, sender_id)
+    analytics.aggregate_gift(session_id, gift_name, gift_count, sender_id, gift_value)
     print(f"{sender_id} sent {gift_count}x {gift_name} ({gift_value} points)")
 
 @client.on(RoomUserSeqEvent)
@@ -147,17 +210,18 @@ async def on_comment(event):
     analytics.save_comment(session_id, event.user.unique_id)
 
 def handle_exit(signum, frame):
-    """Save accumulated stats before exiting gracefully."""
+    """Save accumulated stats before exiting."""
     print("\n💾 Saving aggregated data before exit...")
-    analytics.flush_summary_to_db()
-    analytics.close()
-    
-    loop = asyncio.get_event_loop()
-    loop.stop()  # Stop the event loop instead of sys.exit(0)
 
-# Capture termination signals to ensure data is saved before exit
-signal.signal(signal.SIGINT, handle_exit)  
-signal.signal(signal.SIGTERM, handle_exit)  
+    analytics.flush_summary_to_db()  # Now handles end_time & run_time inside analytics.py
+    analytics.close()  # Close DB connection
+
+    try:
+        loop = asyncio.get_running_loop()
+        loop.call_soon(loop.stop)  # Gracefully stop the event loop
+    except RuntimeError:
+        print("No running event loop, exiting directly.")
+        sys.exit(0)  # Exit the program if no event loop is running
 
 async def main():
     """Main async function to run the live table and TikTok client together."""
@@ -166,8 +230,7 @@ async def main():
 
 if __name__ == "__main__":
     try:
-        asyncio.run(main())  # Start event loop properly
-    except RuntimeError:
-        loop = asyncio.get_event_loop()
-        loop.create_task(main())  # If already running, just create the task
-        loop.run_forever()
+        asyncio.run(main())  # Start the event loop
+    except RuntimeError:  # If loop is already running
+        loop = asyncio.get_running_loop()
+        loop.create_task(main())  # Create a new task
